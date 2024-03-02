@@ -1,8 +1,9 @@
 from datetime import datetime, timezone, timedelta
 
-from jose import JWTError, jwt
+import jwt
 from fastapi import FastAPI, APIRouter, HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from jwt import PyJWTError
 from passlib.context import CryptContext
 
 from app.api.endpoints.users import get_user
@@ -17,13 +18,6 @@ app = FastAPI()
 SECRET_KEY = "d759d4f8dd25fe2c50453e71e5e4ad1c4304973bd194667214aba37645816181"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
-
-# fake_users_db = {
-#     "admin": {
-#         "username": "admin",
-#         "hashed_password": "$2b$12$yXXTO/WpdkBTCkk02wPOzOL0n2q/YsZ6plccT48qtOsYJKUqCNzZK",
-#     }
-# }
 
 
 def verify_password(plain_password, hashed_password):
@@ -62,7 +56,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         if username is None:
             raise credentials_exception
         token_data = TokenData(username=username)
-    except JWTError:
+    except PyJWTError:
         raise credentials_exception
     user = get_user(fake_users_db, username=token_data.username)
     if user is None:
