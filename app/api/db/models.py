@@ -1,4 +1,4 @@
-from sqlalchemy import Enum
+from sqlalchemy import Enum, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column
 
 
@@ -19,7 +19,7 @@ class UserRole(str, Enum):
 
 
 class User(Base):
-    username: Mapped[str] = mapped_column(unique=True)
+    username: Mapped[str] = mapped_column(String(15), unique=True)
     password: Mapped[str]
     role: UserRole = mapped_column(default=UserRole.guest)
 
