@@ -1,4 +1,4 @@
-from sqlalchemy import Enum, String
+from sqlalchemy import Enum, String, Text, ForeignKey
 from enum import Enum as PyEnum
 from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column
 
@@ -23,6 +23,19 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(15), unique=True)
     password: Mapped[str]
     role: Mapped[UserRole] = mapped_column(Enum(UserRole), default=UserRole.guest)
+
+
+class Todo(Base):
+    title: Mapped[str] = mapped_column(String(30))
+    description: Mapped[str] = mapped_column(
+        Text,
+        default="",
+        server_default="",
+    )
+    completed: Mapped[bool] = mapped_column(default=False)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"),
+    )
 
 
 # class Token(Base):
