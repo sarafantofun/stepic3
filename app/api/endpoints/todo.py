@@ -12,9 +12,9 @@ router = APIRouter(prefix="/todo", tags=["Todo"])
 
 @router.post("/todo")
 async def create_todo(
-        data: TodoCreate = Depends(get_current_user),
-        db: AsyncSession = Depends(get_db_session)
-        ):
+    data: TodoCreate = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session),
+):
     db_todo = DBTodo(title=data.title, description=data.description)
     db.add(db_todo)
     await db.commit()
