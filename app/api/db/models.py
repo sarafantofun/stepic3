@@ -1,4 +1,5 @@
 from sqlalchemy import Enum, String
+from enum import Enum as PyEnum
 from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column
 
 
@@ -12,7 +13,7 @@ class Base(DeclarativeBase):
     id: Mapped[int] = mapped_column(primary_key=True)
 
 
-class UserRole(str, Enum):
+class UserRole(PyEnum):
     admin = "admin"
     user = "user"
     guest = "guest"
@@ -21,7 +22,7 @@ class UserRole(str, Enum):
 class User(Base):
     username: Mapped[str] = mapped_column(String(15), unique=True)
     password: Mapped[str]
-    role: UserRole = mapped_column(default=UserRole.guest)
+    role: Mapped[UserRole] = mapped_column(Enum(UserRole), default=UserRole.guest)
 
 
 # class Token(Base):
