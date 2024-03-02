@@ -5,8 +5,12 @@ from fastapi import FastAPI, APIRouter, HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jwt import PyJWTError
 from passlib.context import CryptContext
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.endpoints.users import get_user
+
+from app.api.db import get_db_session
+from app.api.db.models import User
 from app.api.schemas import Token, TokenData
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
@@ -35,16 +39,22 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     return encoded_jwt
 
 
-def authenticate_user(fake_db, username: str, password: str):
-    user = get_user(fake_db, username)
-    if not user:
-        return False
-    if not verify_password(password, user.hashed_password):
-        return False
-    return user
+async def authenticate_user(
+    username: str, password: str, db: AsyncSession = Depends(get_db_session)
+):
+    async with db as session:
+        result = await session.execute(select(User).where(User.username == username))
+        user = result.scalars().first()
+        if not user:
+            return False
+        if not verify_password(password, user.password):
+            return False
+        return user
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme)):
+async def get_current_user(
+    db: AsyncSession = Depends(get_db_session), token: str = Depends(oauth2_scheme)
+):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -58,7 +68,9 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         token_data = TokenData(username=username)
     except PyJWTError:
         raise credentials_exception
-    user = get_user(fake_users_db, username=token_data.username)
+    stmt = select(User).where(User.username == token_data.username)
+    result = await db.execute(stmt)
+    user = result.scalar_one_or_none()
     if user is None:
         raise credentials_exception
     return user
@@ -67,8 +79,9 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
 @router.post("/login")
 async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
+    db: AsyncSession = Depends(get_db_session),
 ) -> Token:
-    user = authenticate_user(fake_users_db, form_data.username, form_data.password)
+    user = await authenticate_user(form_data.username, form_data.password, db)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

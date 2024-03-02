@@ -25,12 +25,3 @@ class User(Base):
     password: Mapped[str]
     role: Mapped[UserRole] = mapped_column(Enum(UserRole), default=UserRole.guest)
     todos: Mapped[list["Todo"]] = relationship(back_populates="user")
-
-
-# class Token(Base):
-#     access_token: Mapped[str]
-#     token_type: Mapped[str]
-#
-#
-# class TokenData(Base):
-#     username: Mapped[str] | None = mapped_column(default=None)
