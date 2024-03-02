@@ -14,6 +14,7 @@ def get_password_hash(password):
     return pwd_context.hash(password)
 
 
+@router.post("/create_user")
 async def create_user(user: UserCreate, db: AsyncSession = Depends(get_db_session)):
     hashed_password = get_password_hash(user.password)
     db_user = DBUser(username=user.username, password=hashed_password, role=user.role)
