@@ -20,5 +20,4 @@ async def create_user(user: UserCreate, db: AsyncSession = Depends(get_db_sessio
     db_user = DBUser(username=user.username, password=hashed_password, role=user.role)
     db.add(db_user)
     await db.commit()
-    await db.refresh(db_user)
     return db_user

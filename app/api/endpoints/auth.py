@@ -15,7 +15,7 @@ from app.api.schemas import Token, TokenData
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
 app = FastAPI()
 
 
@@ -63,17 +63,16 @@ async def get_current_user(
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
-        if username is None:
-            raise credentials_exception
         token_data = TokenData(username=username)
+        async with db as session:
+            stmt = select(User).where(User.username == token_data.username)
+            result = await session.execute(stmt)
+            user = result.scalar_one_or_none()
+            if user is None:
+                raise credentials_exception
+            return user
     except PyJWTError:
         raise credentials_exception
-    stmt = select(User).where(User.username == token_data.username)
-    result = await db.execute(stmt)
-    user = result.scalar_one_or_none()
-    if user is None:
-        raise credentials_exception
-    return user
 
 
 @router.post("/login")

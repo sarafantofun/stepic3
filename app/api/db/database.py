@@ -15,7 +15,7 @@ async_session_factory = async_sessionmaker(
 
 
 @asynccontextmanager
-async def get_db_session():
+async def get_db_ses():
     try:
         async_session = async_session_factory()
         async with async_session as session:
@@ -25,3 +25,8 @@ async def get_db_session():
         raise
     finally:
         await session.close()
+
+
+async def get_db_session():
+    async with get_db_ses() as session:
+        yield session
