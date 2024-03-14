@@ -13,7 +13,7 @@ from app.api.endpoints.auth import get_current_user
 router = APIRouter(prefix="/todo", tags=["Todo"])
 
 
-@router.post("")
+@router.post("", status_code=status.HTTP_201_CREATED)
 async def create_todo(
     data: TodoCreate,
     current_user: User = Depends(get_current_user),
@@ -24,9 +24,7 @@ async def create_todo(
     )
     db.add(db_todo)
     await db.commit()
-    return {
-        "message": f"Task {db_todo.title} successfully created",
-    }
+    return db_todo
 
 
 @router.get("/{todo_id}")
@@ -52,3 +50,19 @@ async def update_todo(
     todo_obj_update.description = data.description
     await db.commit()
     return todo_obj_update
+
+
+@router.delete("/{todo_id}")
+async def del_todo(
+    todo_id: int,
+    db: AsyncSession = Depends(get_db_session),
+):
+    result = await db.execute(select(DBTodo).filter(DBTodo.id == todo_id))
+    todo_to_delete = result.scalars().first()
+    if todo_to_delete is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Todo not found")
+    await db.delete(todo_to_delete)
+    await db.commit()
+    return {
+        "message": f"Task successfully deleted",
+    }
